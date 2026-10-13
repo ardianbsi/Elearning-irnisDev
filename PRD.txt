@@ -1,0 +1,14 @@
+Baca seluruh dokumen PRD yang tersedia di folder docs/prd/, khususnya 00_README_PAKET.txt, 01_PRD_UTAMA.txt, 02_PERMISSION_MATRIX.txt, dan 09_IMPLEMENTATION_PLAN.txt.
+
+Lakukan TASK 0 — REPOSITORY AUDIT saja.
+
+Periksa versi Laravel dan PHP, konfigurasi PostgreSQL, struktur folder, dependency, autentikasi, UI, serta test yang sudah tersedia.
+
+Jangan mengubah file, memasang dependency, menjalankan migrasi, atau menghapus data pada tahap ini.
+
+Laporkan:
+1. Kondisi repository saat ini.
+2. Kesesuaian dengan PRD.
+3. Dependency dan risiko kompatibilitas.
+4. Fitur yang sudah ada dan yang belum ada.
+5. Rencana implementasi bertahap dengan urutan dependency yang benar.
