@@ -3,10 +3,10 @@
 > AI coding agent: perbarui dokumen ini di akhir setiap fase. Jangan mengklaim pekerjaan selesai tanpa verifikasi.
 
 ## Current status
-- Fase terakhir: Fase 0 — Audit Repository
-- Status: Complete
+- Fase terakhir: Fase 1 — Fondasi, Autentikasi, Role/Permission, Layout
+- Status: In progress (kode selesai, verifikasi test TERTUNDA tooling)
 - Tanggal: 2026-10-13
-- Branch/commit (jika tersedia): master (initial commit menyusul)
+- Branch/commit (jika tersedia): master (commit Fase 1 menyusul)
 
 ## Repository baseline
 - Laravel: v13.35.0 (syarat composer ^13.17)
@@ -20,7 +20,7 @@
 
 ## Completed
 - [x] Fase 0 — Audit
-- [ ] Fase 1 — Fondasi/Auth/UI
+- [ ] Fase 1 — Fondasi/Auth/UI (kode selesai, test belum terverifikasi via tooling)
 - [ ] Fase 2 — Master data
 - [ ] Fase 3 — Kelas/Enrollment/Jadwal
 - [ ] Fase 4 — Pertemuan/Presensi
@@ -32,36 +32,51 @@
 - [ ] Fase 10 — Hardening/Deployment
 
 ## Files changed
-- HANDOFF_STATE.md (baru): hasil audit Fase 0.
-- Tidak ada perubahan kode aplikasi pada Fase 0.
+- HANDOFF_STATE.md: hasil audit Fase 0 + progres Fase 1.
+- Fase 1 (baru/diubah):
+  - app/Enums/UserRole.php (enum 4 role + label + dashboardRoute)
+  - database/migrations/2026_10_13_000001_add_role_to_users_table.php (role + is_active)
+  - app/Models/User.php (cast role, helper hasRole/isAdmin)
+  - app/Http/Middleware/EnsureRole.php + alias 'role' di bootstrap/app.php
+  - app/Http/Requests/Auth/LoginRequest.php
+  - app/Http/Controllers/Auth/AuthenticatedSessionController.php (login/logout + tolak nonaktif)
+  - app/Http/Controllers/Auth/PasswordResetController.php
+  - app/Http/Controllers/DashboardController.php
+  - routes/web.php (login/reset/dashboard per role + middleware role)
+  - config/app.php (timezone Asia/Jakarta, locale id, faker id_ID)
+  - resources/views/layouts/app.blade.php + auth/*.blade.php + dashboard/*.blade.php
+  - database/factories/UserFactory.php (default student + state role)
+  - database/seeders/DemoUsersSeeder.php (4 akun demo) + DatabaseSeeder (dev-only)
+  - tests/Feature/AuthenticationTest.php, RoleAccessTest.php, PasswordResetTest.php
 
 ## Database changes
-- Migration dibuat: tidak ada.
-- Migration dijalankan pada environment: tidak ada.
-- Data seeder: tidak ada.
-- Catatan rollback: tidak perlu.
+- Migration dibuat: 2026_10_13_000001_add_role_to_users_table (role string 20 default student + index, is_active default true).
+- Migration dijalankan pada environment: dev lokal sqlite — Ran batch 2 (terlihat di migrate:status).
+- Data seeder: DemoUsersSeeder DONE 1.551 ms di sqlite dev (4 akun demo password).
+- Catatan rollback: migrate:rollback satu batch menghapus kolom role/is_active; seeder dev-only, jangan di production.
 
 ## Tests
-- Command: php artisan test (tidak mengembalikan output ter-capture via tool shell)
-- Hasil aktual: BELUM TERVERIFIKASI — output tool kosong, jangan dianggap lulus.
-- Test gagal / tidak dijalankan: full suite belum terkonfirmasi; hanya ada tests/Feature/ExampleTest + tests/Unit/ExampleTest bawaan.
-- Alasan: integrasi shell Windows/Laragon tidak mengembalikan stdout perintah artisan.
+- Command: php artisan test, vendor/bin/phpunit --filter AuthenticationTest, php artisan test > storage/logs/fase1-test.txt
+- Hasil aktual: TIDAK TERVERIFIKASI — semua perintah test tidak mengembalikan output ter-capture via tool shell (result kosong/error code 1). File storage/logs/fase1-test.txt kosong.
+- Test gagal / tidak dijalankan: AuthenticationTest (5 test), RoleAccessTest (3 test incl. matriks 16 kombinasi), PasswordResetTest (4 test), ExampleTest bawaan.
+- Alasan: integrasi shell Windows/Laragon tidak mengembalikan stdout proses test. php -l UserRole OK; migrate:status + db:seed terlihat OK di terminal.
 
 ## Decisions
 - Sumber kebenaran PRD: DOCS/PRD/ (15 file Fase 0–10); PRD.txt root dianggap usang, diarsipkan nanti.
-- Livewire v4 mendukung illuminate ^10|^11|^12|^13 (Packagist 2026-10-07) → kandidat UI Fase 1, instalasi via composer resmi saat Fase 1.
-- Authorization: Policies/Gates native + kolom/enum role (tanpa Spatie), sesuai 01_MASTER_SPEC.
-- Timezone Asia/Jakarta + locale id: diusulkan untuk Fase 1 (menunggu persetujuan, menyentuh config).
-- Menunggu persetujuan: nama DB/user PostgreSQL dev; .env produksi tidak diubah tanpa izin.
+- Livewire v4 mendukung illuminate ^10|^11|^12|^13 (Packagist 2026-10-07) → DITUNDA. Fase 1 Blade murni karena install dependency utama butuh izin eksplisit (aturan 00 no.5).
+- Authorization: Policies/Gates native + enum role (tanpa Spatie), sesuai 01_MASTER_SPEC. Gate::before superadmin + 4 Gate + middleware role:*.
+- Timezone Asia/Jakarta + locale id + faker id_ID: DITERAPKAN di config/app.php (bukan .env, sesuai larangan ubah .env).
+- .env dan koneksi DB tidak diubah (tetap sqlite dev). PostgreSQL dev menunggu kredensial user.
+- Seeder demo dev-only (guard isProduction), password 'password'.
 
 ## Known issues / blockers
-- php artisan test belum terkonfirmasi (output tidak ter-capture).
-- composer -V / node -v terlihat di terminal tapi result tool error; versi dicatat dari konten terminal.
-- git init sudah jalan (branch master, untracked files terlihat) tapi commit belum dibuat.
+- Hasil php artisan test BELUM terverifikasi via tooling (output tidak ter-capture). WAJIB: user jalankan `php artisan test` manual di terminal Laragon dan laporkan hasil sebelum Fase 1 dinyatakan Complete.
+- File storage/logs/fase1-test.txt kosong (dibuat saat percobaan redirect) — hapus manual atau biarkan, tidak di-commit (storage/logs di-ignore? cek).
 - Server PostgreSQL Laragon belum diverifikasi (butuh kredensial/nama DB dari user).
-- Lisensi template Matrix Admin belum diverifikasi → default dashboard orisinal.
+- Lisensi template Matrix Admin belum diverifikasi → dashboard orisinal (keputusan: orisinal, sesuai klausul PRD).
+- Reset password memakai MAIL_MAILER=log → tautan hanya di log; diuji via PasswordResetTest dengan token manual.
 
 ## Next exact step
-- Nama fase berikutnya: Fase 1 — Fondasi, Autentikasi, Role/Permission, Layout
-- Prompt/task terkecil yang harus dilakukan: verifikasi composer/node/pgsql + baseline test, lalu buat HANDOFF commit Fase 0.
-- File PRD yang harus dibaca: DOCS/PRD/00_PETUNJUK_UMUM.txt, 01_MASTER_SPEC.txt, 03_FASE_01_FONDASI_AUTH_UI.txt
+- Nama fase berikutnya: Fase 1 (verifikasi) → Fase 2 Master Data
+- Prompt/task terkecil yang harus dilakukan: (1) user jalankan php artisan test manual; (2) commit Fase 1; (3) mulai Fase 2.
+- File PRD yang harus dibaca: DOCS/PRD/00_PETUNJUK_UMUM.txt, 01_MASTER_SPEC.txt, 04_FASE_02_MASTER_DATA.txt
