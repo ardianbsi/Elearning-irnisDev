@@ -41,6 +41,16 @@
                     @if (auth()->user()->hasRole(\App\Enums\UserRole::AdminAcademic))
                         <a href="{{ route('dashboard.admin') }}" class="rounded px-2 py-1 hover:bg-slate-700">Akademik</a>
                     @endif
+                    @if (auth()->user()->isAdmin())
+                        <a href="{{ route('admin.faculties.index') }}" class="rounded px-2 py-1 hover:bg-slate-700">Fakultas</a>
+                        <a href="{{ route('admin.study-programs.index') }}" class="rounded px-2 py-1 hover:bg-slate-700">Prodi</a>
+                        <a href="{{ route('admin.academic-years.index') }}" class="rounded px-2 py-1 hover:bg-slate-700">Tahun</a>
+                        <a href="{{ route('admin.semesters.index') }}" class="rounded px-2 py-1 hover:bg-slate-700">Semester</a>
+                        <a href="{{ route('admin.courses.index') }}" class="rounded px-2 py-1 hover:bg-slate-700">Matkul</a>
+                        <a href="{{ route('admin.rooms.index') }}" class="rounded px-2 py-1 hover:bg-slate-700">Ruang</a>
+                        <a href="{{ route('admin.students.index') }}" class="rounded px-2 py-1 hover:bg-slate-700">Mahasiswa</a>
+                        <a href="{{ route('admin.lecturers.index') }}" class="rounded px-2 py-1 hover:bg-slate-700">Dosen</a>
+                    @endif
                     @if (auth()->user()->hasRole(\App\Enums\UserRole::Lecturer))
                         <a href="{{ route('dashboard.lecturer') }}" class="rounded px-2 py-1 hover:bg-slate-700">Dosen</a>
                     @endif

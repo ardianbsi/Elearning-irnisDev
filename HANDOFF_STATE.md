@@ -3,25 +3,25 @@
 > AI coding agent: perbarui dokumen ini di akhir setiap fase. Jangan mengklaim pekerjaan selesai tanpa verifikasi.
 
 ## Current status
-- Fase terakhir: Fase 1 — Fondasi, Autentikasi, Role/Permission, Layout
-- Status: In progress (kode selesai, verifikasi test TERTUNDA tooling)
-- Tanggal: 2026-10-13
-- Branch/commit (jika tersedia): master (commit Fase 1 menyusul)
+- Fase terakhir: Fase 2 — Master Data Akademik
+- Status: Complete (46/46 tests lolos, 165 assertions)
+- Tanggal: 2026-10-20
+- Branch/commit (jika tersedia): master (commit Fase 2 menyusul)
 
 ## Repository baseline
 - Laravel: v13.35.0 (syarat composer ^13.17)
-- PHP: 8.4.26 CLI ZTS + OPcache (syarat ^8.3 terpenuhi)
+- PHP: 8.4.26 CLI ZTS + OPcache — WAJIB pakai C:\laragon\bin\php\php-8.4.26-Win32-vs17-x64\php.exe (shell default 8.1.10 gagal platform_check)
 - Composer: 2.4.1 (warning deprecation nullable di PHP 8.4, non-blocking)
 - Node: v24.21.0
-- Database: sqlite aktif (.env), file database/database.sqlite ±98 KB; pgsql tersedia via pdo_pgsql/pgsql tapi belum dikonfigurasi
-- UI stack: Tailwind ^4.0.0 + laravel-vite-plugin ^3.1 + vite ^8.0.0; entry resources/css/app.css + resources/js/app.js
+- Database: sqlite aktif (.env), migrasi Fase 1+2 Ran; pgsql tersedia via pdo_pgsql tapi belum dikonfigurasi
+- UI stack: Blade + Tailwind ^4; Livewire v4 support L13 terverifikasi tapi DITUNDA (butuh izin install dependency)
 - Test framework: PHPUnit ^12.5.12, phpunit.xml sqlite :memory:
-- Auth/permission package: belum ada (default session guard web + model User)
+- Auth: session guard web + enum UserRole + middleware role:* + Gates + 9 Policies
 
 ## Completed
 - [x] Fase 0 — Audit
-- [ ] Fase 1 — Fondasi/Auth/UI (kode selesai, test belum terverifikasi via tooling)
-- [ ] Fase 2 — Master data
+- [x] Fase 1 — Fondasi/Auth/UI (14/14 tests lolos)
+- [x] Fase 2 — Master data (46/46 tests lolos)
 - [ ] Fase 3 — Kelas/Enrollment/Jadwal
 - [ ] Fase 4 — Pertemuan/Presensi
 - [ ] Fase 5 — Materi
@@ -32,51 +32,52 @@
 - [ ] Fase 10 — Hardening/Deployment
 
 ## Files changed
-- HANDOFF_STATE.md: hasil audit Fase 0 + progres Fase 1.
-- Fase 1 (baru/diubah):
-  - app/Enums/UserRole.php (enum 4 role + label + dashboardRoute)
-  - database/migrations/2026_10_13_000001_add_role_to_users_table.php (role + is_active)
-  - app/Models/User.php (cast role, helper hasRole/isAdmin)
-  - app/Http/Middleware/EnsureRole.php + alias 'role' di bootstrap/app.php
-  - app/Http/Requests/Auth/LoginRequest.php
-  - app/Http/Controllers/Auth/AuthenticatedSessionController.php (login/logout + tolak nonaktif)
-  - app/Http/Controllers/Auth/PasswordResetController.php
-  - app/Http/Controllers/DashboardController.php
-  - routes/web.php (login/reset/dashboard per role + middleware role)
-  - config/app.php (timezone Asia/Jakarta, locale id, faker id_ID)
-  - resources/views/layouts/app.blade.php + auth/*.blade.php + dashboard/*.blade.php
-  - database/factories/UserFactory.php (default student + state role)
-  - database/seeders/DemoUsersSeeder.php (4 akun demo) + DatabaseSeeder (dev-only)
-  - tests/Feature/AuthenticationTest.php, RoleAccessTest.php, PasswordResetTest.php
+- Fase 2 (baru/diubah):
+  - 7 migrasi: faculties, study_programs (FK restrict), academic_years, semesters (unique tahun+termin), courses, rooms, students+lecturers (user unique, NIM/NIP unique)
+  - 8 model + relasi (User hasOne student/lecturer); base Controller pakai AuthorizesRequests (fix Laravel 13)
+  - 9 Policies (AcademicPolicy induk + 8 spesifik; Faculty delete ditolak bila punya prodi)
+  - 8 Form Requests (unique ignore, FK exists, tanggal konsisten, pesan id)
+  - 8 Controllers Admin (index search/filter/pagination + eager loading, store/show/edit/update, toggle aktif; tanpa destroy)
+  - routes/web.php grup admin role:superadmin,admin_academic + nav menu admin
+  - 34 views: filter-form, 8 modul x index/create/edit/show
+  - 8 factories; 3 file test (Authorization 24 dataset + CRUD + Profil)
 
 ## Database changes
-- Migration dibuat: 2026_10_13_000001_add_role_to_users_table (role string 20 default student + index, is_active default true).
-- Migration dijalankan pada environment: dev lokal sqlite — Ran batch 2 (terlihat di migrate:status).
-- Data seeder: DemoUsersSeeder DONE 1.551 ms di sqlite dev (4 akun demo password).
-- Catatan rollback: migrate:rollback satu batch menghapus kolom role/is_active; seeder dev-only, jangan di production.
+- Migration dibuat: 2026_10_20_000001 s.d. 000007 (8 tabel).
+- Migration dijalankan pada environment: dev lokal sqlite — semua DONE (batch 3).
+- Data seeder: DemoUsersSeeder tetap (Fase 1).
+- Catatan rollback: migrate:rollback menghapus 8 tabel master (FK restrict aman karena drop urutan terbalik).
 
 ## Tests
-- Command: php artisan test, vendor/bin/phpunit --filter AuthenticationTest, php artisan test > storage/logs/fase1-test.txt
-- Hasil aktual: TIDAK TERVERIFIKASI — semua perintah test tidak mengembalikan output ter-capture via tool shell (result kosong/error code 1). File storage/logs/fase1-test.txt kosong.
-- Test gagal / tidak dijalankan: AuthenticationTest (5 test), RoleAccessTest (3 test incl. matriks 16 kombinasi), PasswordResetTest (4 test), ExampleTest bawaan.
-- Alasan: integrasi shell Windows/Laragon tidak mengembalikan stdout proses test. php -l UserRole OK; migrate:status + db:seed terlihat OK di terminal.
+- Command: php8.4 vendor/bin/phpunit (via run-fase1-test.php, lalu dihapus)
+- Hasil aktual: PASSED — 46 tests, 46 passed, 165 assertions, EXIT=0.
+- Cakupan Fase 2: guest→login (8 URL), dosen/mahasiswa→403 (16 cek), admin/superadmin→200 (16 cek), CRUD fakultas+toggle, duplikat kode, policy delete fakultas terpakai, CRUD prodi/tahun/semester-unik/matkul/ruang, NIM+NIP unik, user tunggal per profil, relasi user/prodi.
+- Bug yang diperbaiki saat verifikasi: (1) Controller::authorize() tak ada → trait AuthorizesRequests; (2) @dataProvider anotasi → atribut #[DataProvider]; (3) @include dengan $slot → tabel inline per view.
 
 ## Decisions
-- Sumber kebenaran PRD: DOCS/PRD/ (15 file Fase 0–10); PRD.txt root dianggap usang, diarsipkan nanti.
-- Livewire v4 mendukung illuminate ^10|^11|^12|^13 (Packagist 2026-10-07) → DITUNDA. Fase 1 Blade murni karena install dependency utama butuh izin eksplisit (aturan 00 no.5).
-- Authorization: Policies/Gates native + enum role (tanpa Spatie), sesuai 01_MASTER_SPEC. Gate::before superadmin + 4 Gate + middleware role:*.
-- Timezone Asia/Jakarta + locale id + faker id_ID: DITERAPKAN di config/app.php (bukan .env, sesuai larangan ubah .env).
-- .env dan koneksi DB tidak diubah (tetap sqlite dev). PostgreSQL dev menunggu kredensial user.
-- Seeder demo dev-only (guard isProduction), password 'password'.
+- Tanpa hard delete master data (hanya toggle is_active); FK restrictOnDelete untuk fakultas→prodi, tahun→semester.
+- students/lecturers: user_id unique + cascadeOnDelete; NIM/NIP unique; user pengikat tak bisa diganti saat update.
+- users sebagai akun login; nama/email tidak diduplikasi di profil (relasi user).
+- Filter fakultas/prodi/tahun di index disederhanakan (hanya search q) agar include Blade valid; filter spesifik menyusul bila diminta.
+- Artefak verifikasi (run-fase1-test.php, test-output.txt, junit*.xml, fase*-verify.txt) DIHAPUS sebelum commit.
 
 ## Known issues / blockers
-- Hasil php artisan test BELUM terverifikasi via tooling (output tidak ter-capture). WAJIB: user jalankan `php artisan test` manual di terminal Laragon dan laporkan hasil sebelum Fase 1 dinyatakan Complete.
-- File storage/logs/fase1-test.txt kosong (dibuat saat percobaan redirect) — hapus manual atau biarkan, tidak di-commit (storage/logs di-ignore? cek).
-- Server PostgreSQL Laragon belum diverifikasi (butuh kredensial/nama DB dari user).
-- Lisensi template Matrix Admin belum diverifikasi → dashboard orisinal (keputusan: orisinal, sesuai klausul PRD).
-- Reset password memakai MAIL_MAILER=log → tautan hanya di log; diuji via PasswordResetTest dengan token manual.
+- PostgreSQL dev belum setup (menunggu kredensial user); sqlite tetap untuk dev.
+- Livewire ditunda; UI Blade murni.
+- Reset password via log mail (dev).
 
 ## Next exact step
-- Nama fase berikutnya: Fase 1 (verifikasi) → Fase 2 Master Data
-- Prompt/task terkecil yang harus dilakukan: (1) user jalankan php artisan test manual; (2) commit Fase 1; (3) mulai Fase 2.
-- File PRD yang harus dibaca: DOCS/PRD/00_PETUNJUK_UMUM.txt, 01_MASTER_SPEC.txt, 04_FASE_02_MASTER_DATA.txt
+- Nama fase berikutnya: Fase 3 — Kelas, Dosen Pengampu, Enrollment, Jadwal
+- Prompt/task terkecil yang harus dilakukan: migrasi course_classes, class_lecturers, enrollments, class_schedules + service deteksi bentrok + CRUD admin + tampilan dosen/mahasiswa + test bentrok & authorization.
+- File PRD yang harus dibaca: DOCS/PRD/00_PETUNJUK_UMUM.txt, 01_MASTER_SPEC.txt, 05_FASE_03_KELAS_ENROLLMENT_JADWAL.txt
+
+---
+
+## Riwayat Fase 1 (2026-10-20, commit 3a65187)
+- Enum UserRole (4 role), migrasi role+is_active, middleware role:*, Gates, login/logout/reset, 4 dashboard, seeder demo dev-only.
+- Tests: 14/14 lolos, 80 assertions (auth, matriks 16 kombinasi lintas-role, reset password).
+- Keputusan: timezone Asia/Jakarta + locale id di config (bukan .env); Livewire ditunda; .env/DB tak diubah.
+
+## Riwayat Fase 0 (2026-10-13, commit 60416b5 + d315849)
+- Audit read-only skeleton Laravel 13; PRD DOCS/PRD/ sebagai sumber kebenaran; PRD.txt root usang.
+

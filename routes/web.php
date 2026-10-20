@@ -1,5 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\AcademicYearController;
+use App\Http\Controllers\Admin\CourseController;
+use App\Http\Controllers\Admin\FacultyController;
+use App\Http\Controllers\Admin\LecturerController;
+use App\Http\Controllers\Admin\RoomController;
+use App\Http\Controllers\Admin\SemesterController;
+use App\Http\Controllers\Admin\StudentController;
+use App\Http\Controllers\Admin\StudyProgramController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\DashboardController;
@@ -42,4 +50,31 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/mahasiswa', [DashboardController::class, 'student'])
         ->middleware('role:student')
         ->name('dashboard.student');
+});
+
+// Master data akademik (admin saja)
+Route::middleware(['auth', 'role:superadmin,admin_academic'])->prefix('admin')->name('admin.')->group(function () {
+    Route::resource('faculties', FacultyController::class)->except(['destroy']);
+    Route::post('faculties/{faculty}/toggle', [FacultyController::class, 'toggle'])->name('faculties.toggle');
+
+    Route::resource('study-programs', StudyProgramController::class)->except(['destroy']);
+    Route::post('study-programs/{study_program}/toggle', [StudyProgramController::class, 'toggle'])->name('study-programs.toggle');
+
+    Route::resource('academic-years', AcademicYearController::class)->except(['destroy']);
+    Route::post('academic-years/{academic_year}/toggle', [AcademicYearController::class, 'toggle'])->name('academic-years.toggle');
+
+    Route::resource('semesters', SemesterController::class)->except(['destroy']);
+    Route::post('semesters/{semester}/toggle', [SemesterController::class, 'toggle'])->name('semesters.toggle');
+
+    Route::resource('courses', CourseController::class)->except(['destroy']);
+    Route::post('courses/{course}/toggle', [CourseController::class, 'toggle'])->name('courses.toggle');
+
+    Route::resource('rooms', RoomController::class)->except(['destroy']);
+    Route::post('rooms/{room}/toggle', [RoomController::class, 'toggle'])->name('rooms.toggle');
+
+    Route::resource('students', StudentController::class)->except(['destroy']);
+    Route::post('students/{student}/toggle', [StudentController::class, 'toggle'])->name('students.toggle');
+
+    Route::resource('lecturers', LecturerController::class)->except(['destroy']);
+    Route::post('lecturers/{lecturer}/toggle', [LecturerController::class, 'toggle'])->name('lecturers.toggle');
 });
