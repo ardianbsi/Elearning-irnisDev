@@ -45,6 +45,7 @@ class RoleAccessTest extends TestCase
             $user = User::factory()->role($role)->create();
 
             $this->actingAs($user)->get($url)->assertStatus($expected);
+            auth()->logout();
         }
     }
 

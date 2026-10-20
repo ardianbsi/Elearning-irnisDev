@@ -39,6 +39,8 @@ class AuthenticationTest extends TestCase
             $response->assertRedirect(route($route));
             $this->assertAuthenticatedAs($user);
             $this->post('/logout');
+            $this->assertGuest();
+            auth()->logout();
         }
     }
 
